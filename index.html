@@ -1079,21 +1079,44 @@ switchTab("lancamento");
 (function () {
   const overlay = document.getElementById("auth-overlay");
   const btnLogout = document.getElementById("btn-logout");
-  const KEY = "bfm_auth";
-  const H = "QmVzdGZ5QE0zdHIxY0BzIzIwMjY=";
+  const KEY     = "bfm_auth";
+  const KEY_EXP = "bfm_exp";
+  const H       = "QmVzdGZ5QE0zdHIxY0BzIzIwMjY=";
+  const TTL     = 60 * 60 * 1000; // 1 hora em ms
+
+  function isValid() {
+    const exp = parseInt(localStorage.getItem(KEY_EXP) || "0", 10);
+    return localStorage.getItem(KEY) === "1" && Date.now() < exp;
+  }
 
   function showDashboard() {
     overlay.classList.add("hidden");
     btnLogout.style.display = "inline-block";
   }
 
-  if (sessionStorage.getItem(KEY) === "1") showDashboard();
+  function logout() {
+    localStorage.removeItem(KEY);
+    localStorage.removeItem(KEY_EXP);
+    overlay.classList.remove("hidden");
+    btnLogout.style.display = "none";
+    document.getElementById("auth-input").value = "";
+  }
+
+  if (isValid()) {
+    showDashboard();
+  } else {
+    logout();
+  }
+
+  // Verifica expiração a cada minuto
+  setInterval(function () { if (!isValid()) logout(); }, 60000);
 
   window.checkAuth = function () {
     const input = document.getElementById("auth-input");
     const err = document.getElementById("auth-error");
     if (btoa(input.value) === H) {
-      sessionStorage.setItem(KEY, "1");
+      localStorage.setItem(KEY, "1");
+      localStorage.setItem(KEY_EXP, String(Date.now() + TTL));
       err.style.display = "none";
       showDashboard();
     } else {
@@ -1103,12 +1126,7 @@ switchTab("lancamento");
     }
   };
 
-  window.doLogout = function () {
-    sessionStorage.removeItem(KEY);
-    overlay.classList.remove("hidden");
-    btnLogout.style.display = "none";
-    document.getElementById("auth-input").value = "";
-  };
+  window.doLogout = function () { logout(); };
 })();
 </script>
 </body>
