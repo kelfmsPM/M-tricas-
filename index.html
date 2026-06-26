@@ -299,7 +299,7 @@
     <div class="logo-box">B</div>
     <div>
       <h1>Bestfy — Painel de Métricas de Produto</h1>
-      <div class="subtitle">Acompanhamento semanal de indicadores de produto</div>
+      <div class="subtitle" id="dashboard-subtitle">Acompanhamento semanal de indicadores de produto</div>
     </div>
   </div>
   <div class="meta">
@@ -339,13 +339,13 @@
       <div class="meta-item"><label>Taxa de conversão (%)</label><input type="number" id="meta-conversao" placeholder="ex: 60" min="0" max="100" oninput="saveMetas()"></div>
       <div class="meta-item"><label>Taxa de conclusão checkout (%)</label><input type="number" id="meta-conclusao" placeholder="ex: 70" min="0" max="100" oninput="saveMetas()"></div>
       <div class="meta-item"><label>Taxa de rejeição pagamento (%)</label><input type="number" id="meta-rejeicao" placeholder="ex: 10" min="0" max="100" oninput="saveMetas()"></div>
-      <div class="meta-item"><label>Pedidos via checkout (por semana)</label><input type="number" id="meta-pedidos" placeholder="ex: 200" min="0" oninput="saveMetas()"></div>
-      <div class="meta-item"><label>Carrinhos abandonados (por semana)</label><input type="number" id="meta-carrinhos" placeholder="ex: 50" min="0" oninput="saveMetas()"></div>
-      <div class="meta-item"><label>Chamados — Dúvidas (por semana)</label><input type="number" id="meta-duvidas" placeholder="ex: 10" min="0" oninput="saveMetas()"></div>
-      <div class="meta-item"><label>Chamados — Bug (por semana)</label><input type="number" id="meta-bugs" placeholder="ex: 5" min="0" oninput="saveMetas()"></div>
-      <div class="meta-item"><label>Sellers ativos (por semana)</label><input type="number" id="meta-sel-ativos" placeholder="ex: 50" min="0" oninput="saveMetas()"></div>
-      <div class="meta-item"><label>Sellers em churn (por semana)</label><input type="number" id="meta-sel-churn" placeholder="ex: 5" min="0" oninput="saveMetas()"></div>
-      <div class="meta-item"><label>Novos sellers (por semana)</label><input type="number" id="meta-sel-novos" placeholder="ex: 10" min="0" oninput="saveMetas()"></div>
+      <div class="meta-item"><label>Pedidos via checkout (<span class="periodo-lancamento">semana</span>)</label><input type="number" id="meta-pedidos" placeholder="ex: 200" min="0" oninput="saveMetas()"></div>
+      <div class="meta-item"><label>Carrinhos abandonados (<span class="periodo-lancamento">semana</span>)</label><input type="number" id="meta-carrinhos" placeholder="ex: 50" min="0" oninput="saveMetas()"></div>
+      <div class="meta-item"><label>Chamados — Dúvidas (<span class="periodo-lancamento">semana</span>)</label><input type="number" id="meta-duvidas" placeholder="ex: 10" min="0" oninput="saveMetas()"></div>
+      <div class="meta-item"><label>Chamados — Bug (<span class="periodo-lancamento">semana</span>)</label><input type="number" id="meta-bugs" placeholder="ex: 5" min="0" oninput="saveMetas()"></div>
+      <div class="meta-item"><label>Sellers ativos (<span class="periodo-saude">semana</span>)</label><input type="number" id="meta-sel-ativos" placeholder="ex: 50" min="0" oninput="saveMetas()"></div>
+      <div class="meta-item"><label>Sellers em churn (<span class="periodo-saude">semana</span>)</label><input type="number" id="meta-sel-churn" placeholder="ex: 5" min="0" oninput="saveMetas()"></div>
+      <div class="meta-item"><label>Novos sellers (<span class="periodo-saude">semana</span>)</label><input type="number" id="meta-sel-novos" placeholder="ex: 10" min="0" oninput="saveMetas()"></div>
       <div class="meta-item"><label>Receita sellers (R$)</label><input type="number" id="meta-sel-receita" placeholder="ex: 50000" min="0" oninput="saveMetas()"></div>
     </div>
   </div>
@@ -728,7 +728,7 @@ function metaLine(value, label) {
 }
 
 /** Cria gráfico de barras */
-function makeChart(canvasId, datasets, metaValue, metaLabel) {
+function makeChart(canvasId, datasets, metaValue, metaLabel, weeks) {
   const ctx = document.getElementById(canvasId);
   if (!ctx) return;
   const allDatasets = datasets.map((ds, i) => ({
@@ -743,7 +743,7 @@ function makeChart(canvasId, datasets, metaValue, metaLabel) {
   new Chart(ctx, {
     type: "bar",
     data: {
-      labels: window.CHART_WEEKS || WEEKS,
+      labels: weeks || window.CHART_WEEKS || WEEKS,
       datasets: allDatasets,
     },
     options: {
@@ -918,11 +918,12 @@ function init(data) {
     { label: "Cadastro incompleto (sem docs)", series: data.sel_incompletos, invertDelta: true },
     { label: "Taxa de conclusão do cadastro",  series: data.sel_taxa_conclusao, suffix: "%" },
   ]);
+  const sw = window.CHART_WEEKS_SAUDE;
   makeChart("chart-sellers-cadastro", [
     { label: "Total na base",          data: data.sel_total },
     { label: "Novos",                  data: data.sel_novos },
     { label: "Cadastro incompleto",    data: data.sel_incompletos },
-  ], m.sel_novos, "Novos sellers");
+  ], m.sel_novos, "Novos sellers", sw);
 
   // 10. Sellers — Engajamento & Saúde
   renderCards("cards-sellers-engajamento", [
@@ -936,7 +937,7 @@ function init(data) {
     { label: "Churn",               data: data.sel_churn },
     { label: "Nunca venderam",      data: data.sel_nunca_vendeu },
     { label: "Saúde comprometida",  data: data.sel_saude_comprometida },
-  ], m.sel_ativos, "Sellers ativos");
+  ], m.sel_ativos, "Sellers ativos", sw);
 
   // 10. Sellers — Risco
   renderCards("cards-sellers-risco", [
@@ -948,19 +949,45 @@ function init(data) {
     { label: "Chargeback alto", data: data.sel_chargeback_alto },
     { label: "Reembolso alto",  data: data.sel_reembolso_alto },
     { label: "MED elevado",     data: data.sel_med_alto },
-  ]);
+  ], null, null, sw);
 
   // 10. Sellers — Crescimento & Retenção
   renderCards("cards-sellers-crescimento", [
     { label: "Receita total dos sellers (R$)",    series: data.sel_receita },
     { label: "Ticket médio por seller (R$)",      series: data.sel_ticket_medio },
     { label: "LTV médio por seller (R$)",         series: data.sel_ltv_medio },
-    { label: "Tempo médio ativo (semanas)",       series: data.sel_tempo_ativo_semanas },
+    { label: "Tempo médio ativo (períodos)",      series: data.sel_tempo_ativo_semanas },
   ]);
   makeChart("chart-sellers-crescimento", [
     { label: "Receita total (R$)", data: data.sel_receita },
     { label: "LTV médio (R$)",     data: data.sel_ltv_medio },
-  ], m.sel_receita, "Receita sellers");
+  ], m.sel_receita, "Receita sellers", sw);
+}
+
+// ── LABELS DINÂMICOS DE PERÍODO ────────────────────────────
+function extractPeriodo(weeks) {
+  if (!weeks || !weeks.length) return "semana";
+  const first = (weeks.find(w => w && w.trim()) || "").trim().toLowerCase();
+  if (!first) return "semana";
+  const meses = ["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+  if (meses.some(m => first.startsWith(m))) return "mês";
+  // "Semana 1" → "semana", "Mês 1" → "mês", "Quinzena 1" → "quinzena"
+  const word = first.replace(/\s*\d+.*$/, "");
+  return word || "semana";
+}
+
+function applyPeriodLabels(weeksL, weeksS) {
+  const pL = extractPeriodo(weeksL);
+  const pS = extractPeriodo(weeksS);
+
+  // Subtitle do header
+  const sub = document.getElementById("dashboard-subtitle");
+  if (sub) sub.textContent = "Acompanhamento " + pL + " de indicadores de produto";
+
+  // Labels de metas — aba Lançamento
+  document.querySelectorAll(".periodo-lancamento").forEach(el => el.textContent = "por " + pL);
+  // Labels de metas — aba Saúde
+  document.querySelectorAll(".periodo-saude").forEach(el => el.textContent = "por " + pS);
 }
 
 // ── CARGA DE DADOS ─────────────────────────────────────────
@@ -994,7 +1021,8 @@ if (USE_MOCK_DATA) {
     const gS = csvToData(rowsS.length ? rowsS : [{}]);
 
     const liveData = {
-      _weeks: rowsL.map(r => r["semana"] || r["Semana"] || ""),
+      _weeks:       rowsL.map(r => r["semana"] || r["Semana"] || Object.values(r)[0] || ""),
+      _weeks_saude: rowsS.map(r => r["semana"] || r["Semana"] || r["Meses"] || r["meses"] || Object.values(r)[0] || ""),
       // Lançamento
       ns_pedidos:               gL("pedidos_checkout"),
       ns_conversao:             gL("taxa_conversao"),
@@ -1039,7 +1067,9 @@ if (USE_MOCK_DATA) {
       sel_ltv_medio:           gS("sel_ltv_medio"),
       sel_tempo_ativo_semanas: gS("sel_tempo_ativo_semanas"),
     };
-    window.CHART_WEEKS = liveData._weeks;
+    window.CHART_WEEKS       = liveData._weeks;
+    window.CHART_WEEKS_SAUDE = liveData._weeks_saude;
+    applyPeriodLabels(liveData._weeks, liveData._weeks_saude);
     init(liveData);
   })
   .catch(err => {
