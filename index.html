@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bestfy — Painel de Métricas de Produto</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    #auth-overlay {
+      position: fixed; inset: 0; z-index: 9999;
+      background: linear-gradient(135deg, #162848 0%, #1F3864 60%, #2a4a80 100%);
+      display: flex; align-items: center; justify-content: center;
+    }
+    #auth-overlay.hidden { display: none; }
+    .auth-box {
+      background: #fff; border-radius: 16px;
+      padding: 40px 48px; text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+      max-width: 360px; width: 90%;
+    }
+    .auth-box .logo-box {
+      width: 56px; height: 56px;
+      background: #1F3864; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; font-weight: 800; color: #fff;
+      margin: 0 auto 20px;
+    }
+    .auth-box h2 { font-size: 1.25rem; color: #1F3864; font-weight: 700; margin-bottom: 6px; }
+    .auth-box p { font-size: 0.85rem; color: #6b7a8d; margin-bottom: 28px; }
+    .btn-login {
+      background: #1F3864; color: #fff;
+      border: none; border-radius: 8px;
+      padding: 12px 32px; font-size: 1rem; font-weight: 600;
+      cursor: pointer; width: 100%; transition: background 0.2s;
+    }
+    .btn-login:hover { background: #2a4a80; }
+  </style>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy: #1F3864;
+      --navy-light: #2a4a80;
+      --navy-dark: #162848;
+      --accent: #4A90D9;
+      --accent-light: #6aaee8;
+      --bg: #f0f3f8;
+      --surface: #ffffff;
+      --border: #d5dce8;
+      --text: #1a2a3a;
+      --text-muted: #6b7a8d;
+      --green: #1a9e5c;
+      --green-bg: #e6f7ef;
+      --red: #d93025;
+      --red-bg: #fce8e6;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── METAS PANEL ── */
+    #metas-panel {
+      background: #fff;
+      border-bottom: 2px solid var(--border);
+      box-shadow: 0 2px 8px rgba(31,56,100,0.07);
+    }
+    #metas-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px 40px; cursor: pointer; font-weight: 600;
+      font-size: 0.9rem; color: var(--navy); user-select: none;
+      background: #f5f7fb;
+    }
+    #metas-header:hover { background: #edf0f7; }
+    #metas-body { padding: 16px 40px 20px; display: none; }
+    #metas-body.open { display: block; }
+    .metas-hint { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 14px; }
+    .metas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+    .meta-item label { display: block; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 4px; }
+    .meta-item input {
+      width: 100%; padding: 7px 10px; border: 1.5px solid var(--border);
+      border-radius: 6px; font-size: 0.9rem; color: var(--text);
+      outline: none; transition: border-color 0.2s;
+    }
+    .meta-item input:focus { border-color: var(--accent); }
+
+    /* ── TABS ── */
+    #tab-bar {
+      background: var(--navy-dark);
+      padding: 0 40px;
+      display: flex;
+      gap: 4px;
+      border-bottom: 2px solid rgba(255,255,255,0.08);
+    }
+    .tab-btn {
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.55);
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 12px 20px;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+      letter-spacing: 0.2px;
+    }
+    .tab-btn:hover { color: rgba(255,255,255,0.85); }
+    .tab-btn.active { color: #fff; border-bottom-color: var(--accent-light); }
+
+    /* ── HEADER ── */
+    header {
+      background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy) 60%, var(--navy-light) 100%);
+      color: #fff;
+      padding: 28px 40px 24px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      box-shadow: 0 4px 16px rgba(31,56,100,0.25);
+    }
+    header .brand { display: flex; align-items: center; gap: 14px; }
+    header .logo-box {
+      width: 48px; height: 48px;
+      background: rgba(255,255,255,0.18);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; font-weight: 800; letter-spacing: -1px;
+      color: #fff;
+      border: 1.5px solid rgba(255,255,255,0.3);
+    }
+    header h1 { font-size: 1.55rem; font-weight: 700; letter-spacing: -0.3px; }
+    header .subtitle { font-size: 0.82rem; color: rgba(255,255,255,0.7); margin-top: 2px; }
+    header .meta { text-align: right; }
+    header .meta .label { font-size: 0.75rem; color: rgba(255,255,255,0.55); text-transform: uppercase; letter-spacing: 0.5px; }
+    header .meta .date { font-size: 0.95rem; color: rgba(255,255,255,0.9); font-weight: 600; margin-top: 2px; }
+    header .meta .mock-badge {
+      display: inline-block;
+      background: rgba(255,200,50,0.25);
+      border: 1px solid rgba(255,200,50,0.5);
+      color: #ffe082;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 20px;
+      margin-top: 6px;
+      letter-spacing: 0.3px;
+    }
+
+    /* ── NAV PILLS ── */
+    nav {
+      background: var(--navy);
+      padding: 0 40px;
+      display: flex;
+      gap: 4px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    nav::-webkit-scrollbar { display: none; }
+    nav a {
+      color: rgba(255,255,255,0.65);
+      text-decoration: none;
+      font-size: 0.8rem;
+      font-weight: 500;
+      padding: 10px 14px;
+      white-space: nowrap;
+      border-bottom: 2.5px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    nav a:hover, nav a.active {
+      color: #fff;
+      border-bottom-color: var(--accent-light);
+    }
+
+    /* ── MAIN LAYOUT ── */
+    main { padding: 32px 40px 60px; max-width: 1400px; margin: 0 auto; }
+
+    /* ── SECTION ── */
+    .section {
+      margin-bottom: 40px;
+      background: var(--surface);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(31,56,100,0.07);
+    }
+    .section-header {
+      background: linear-gradient(90deg, var(--navy) 0%, var(--navy-light) 100%);
+      color: #fff;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-header .icon {
+      width: 32px; height: 32px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px;
+    }
+    .section-header h2 { font-size: 1rem; font-weight: 700; letter-spacing: 0.1px; }
+    .section-header .section-sub { font-size: 0.75rem; color: rgba(255,255,255,0.6); margin-left: auto; }
+
+    .section-body { padding: 20px 24px 24px; }
+
+    /* ── CARDS ROW ── */
+    .cards-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+    .card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--navy), var(--accent));
+    }
+    .card .card-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .card .card-value {
+      font-size: 1.65rem;
+      font-weight: 800;
+      color: var(--navy);
+      line-height: 1;
+    }
+    .card .card-delta {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 20px;
+      margin-top: 7px;
+    }
+    .card .card-delta.up { background: var(--green-bg); color: var(--green); }
+    .card .card-delta.down { background: var(--red-bg); color: var(--red); }
+    .card .card-delta.neutral { background: #f0f0f0; color: var(--text-muted); }
+
+    /* ── CHART WRAPPER ── */
+    .chart-wrap {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 16px 8px;
+      height: 220px;
+      position: relative;
+    }
+    .chart-wrap canvas { max-height: 190px; }
+
+    /* ── DIVIDER ── */
+    .divider { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      padding: 24px 40px;
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+
+<div id="auth-overlay">
+  <div class="auth-box">
+    <div class="logo-box">B</div>
+    <h2>Bestfy Métricas</h2>
+    <p>Acesso restrito. Insira a senha para continuar.</p>
+    <input type="password" id="auth-input" placeholder="Senha" style="width:100%;padding:10px 12px;border:1.5px solid #d5dce8;border-radius:8px;font-size:1rem;margin-bottom:12px;outline:none;" onkeydown="if(event.key==='Enter')checkAuth()">
+    <div id="auth-error" style="color:#d93025;font-size:0.82rem;margin-bottom:10px;display:none;">Senha incorreta. Tente novamente.</div>
+    <button class="btn-login" onclick="checkAuth()">Entrar</button>
+  </div>
+</div>
+
+<header>
+  <div class="brand">
+    <div class="logo-box">B</div>
+    <div>
+      <h1>Bestfy — Painel de Métricas de Produto</h1>
+      <div class="subtitle">Acompanhamento semanal de indicadores de produto</div>
+    </div>
+  </div>
+  <div class="meta">
+    <div class="label">Última atualização</div>
+    <div class="date" id="last-update">—</div>
+    <button id="btn-logout" onclick="doLogout()" style="display:none;margin-top:8px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:6px;padding:5px 14px;font-size:0.78rem;cursor:pointer;">Sair</button>
+  </div>
+</header>
+
+<div id="tab-bar">
+  <button class="tab-btn active" data-tab="lancamento" onclick="switchTab('lancamento')">🚀 Lançamento de Feature</button>
+  <button class="tab-btn" data-tab="saude" onclick="switchTab('saude')">📊 Saúde da Aplicação</button>
+</div>
+
+<nav id="main-nav">
+  <a href="#north-star" data-tab="lancamento">Indicadores Principais</a>
+  <a href="#cadastro" data-tab="lancamento">Cadastro de Produto</a>
+  <a href="#melhor-envio" data-tab="lancamento">Melhor Envio</a>
+  <a href="#shopify" data-tab="lancamento">Shopify</a>
+  <a href="#cupons" data-tab="lancamento">Cupons</a>
+  <a href="#pixels" data-tab="lancamento">Pixels</a>
+  <a href="#checkout" data-tab="lancamento">Checkout</a>
+  <a href="#carrinho" data-tab="lancamento">Carrinho Abandonado</a>
+  <a href="#suporte" data-tab="lancamento">Suporte</a>
+  <a href="#sellers" data-tab="saude">Sellers</a>
+</nav>
+
+<!-- ── PAINEL DE METAS ── -->
+<div id="metas-panel">
+  <div id="metas-header" onclick="toggleMetas()">
+    <span>🎯 Metas (clique para configurar)</span>
+    <span id="metas-toggle-icon">▼</span>
+  </div>
+  <div id="metas-body">
+    <p class="metas-hint">Preencha as metas abaixo. Uma linha tracejada aparecerá nos gráficos correspondentes. Deixe em branco para não exibir.</p>
+    <div class="metas-grid">
+      <div class="meta-item"><label>Taxa de conversão (%)</label><input type="number" id="meta-conversao" placeholder="ex: 60" min="0" max="100" oninput="saveMetas()"></div>
+      <div class="meta-item"><label>Taxa de conclusão checkout (%)</label><input type="number" id="meta-conclusao" placeholder="ex: 70" min="0" max="100" oninput="saveMetas()"></div>
+      <div class="meta-item"><label>Taxa de rejeição pagamento (%)</label><input type="number" id="meta-rejeicao" placeholder="ex: 10" min="0" max="100" oninput="saveMetas()"></div>
+      <div class="meta-item"><label>Pedidos via checkout (por semana)</label><input type="number" id="meta-pedidos" placeholder="ex: 200" min="0" oninput="saveMetas()"></div>
+      <div class="meta-item"><label>Carrinhos abandonados (por semana)</label><input type="number" id="meta-carrinhos" placeholder="ex: 50" min="0" oninput="saveMetas()"></div>
+      <div class="meta-item"><label>Chamados — Dúvidas (por semana)</label><input type="number" id="meta-duvidas" placeholder="ex: 10" min="0" oninput="saveMetas()"></div>
+      <div class="meta-item"><label>Chamados — Bug (por semana)</label><input type="number" id="meta-bugs" placeholder="ex: 5" min="0" oninput="saveMetas()"></div>
+      <div class="meta-item"><label>Sellers ativos (por semana)</label><input type="number" id="meta-sel-ativos" placeholder="ex: 50" min="0" oninput="saveMetas()"></div>
+      <div class="meta-item"><label>Sellers em churn (por semana)</label><input type="number" id="meta-sel-churn" placeholder="ex: 5" min="0" oninput="saveMetas()"></div>
+      <div class="meta-item"><label>Novos sellers (por semana)</label><input type="number" id="meta-sel-novos" placeholder="ex: 10" min="0" oninput="saveMetas()"></div>
+      <div class="meta-item"><label>Receita sellers (R$)</label><input type="number" id="meta-sel-receita" placeholder="ex: 50000" min="0" oninput="saveMetas()"></div>
+    </div>
+  </div>
+</div>
+
+<main>
+
+  <!-- ── 1. NORTH STAR ── -->
+  <div class="section" id="north-star" data-tab="lancamento">
+    <div class="section-header">
+      <div class="icon">⭐</div>
+      <h2>Indicadores Principais</h2>
+      <span class="section-sub">Semana 1 → Semana 6</span>
+    </div>
+    <div class="section-body">
+      <div class="cards-row" id="cards-north-star"></div>
+      <div class="chart-wrap"><canvas id="chart-north-star"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ── 2. CADASTRO DE PRODUTO ── -->
+  <div class="section" id="cadastro" data-tab="lancamento">
+    <div class="section-header">
+      <div class="icon">📦</div>
+      <h2>Cadastro de Produto</h2>
+      <span class="section-sub">Semana 1 → Semana 6</span>
+    </div>
+    <div class="section-body">
+      <div class="cards-row" id="cards-cadastro"></div>
+      <div class="chart-wrap"><canvas id="chart-cadastro"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ── 3. MELHOR ENVIO ── -->
+  <div class="section" id="melhor-envio" data-tab="lancamento">
+    <div class="section-header">
+      <div class="icon">🚚</div>
+      <h2>Melhor Envio</h2>
+      <span class="section-sub">Semana 1 → Semana 6</span>
+    </div>
+    <div class="section-body">
+      <div class="cards-row" id="cards-melhor-envio"></div>
+      <div class="chart-wrap"><canvas id="chart-melhor-envio"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ── 4. SHOPIFY ── -->
+  <div class="section" id="shopify" data-tab="lancamento">
+    <div class="section-header">
+      <div class="icon">🛍️</div>
+      <h2>Shopify</h2>
+      <span class="section-sub">Semana 1 → Semana 6</span>
+    </div>
+    <div class="section-body">
+      <div class="cards-row" id="cards-shopify"></div>
+      <div class="chart-wrap"><canvas id="chart-shopify"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ── 5. CUPONS ── -->
+  <div class="section" id="cupons" data-tab="lancamento">
+    <div class="section-header">
+      <div class="icon">🏷️</div>
+      <h2>Cupons</h2>
+      <span class="section-sub">Semana 1 → Semana 6</span>
+    </div>
+    <div class="section-body">
+      <div class="cards-row" id="cards-cupons"></div>
+      <div class="chart-wrap"><canvas id="chart-cupons"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ── 6. PIXELS ── -->
+  <div class="section" id="pixels" data-tab="lancamento">
+    <div class="section-header">
+      <div class="icon">📡</div>
+      <h2>Pixels</h2>
+      <span class="section-sub">Semana 1 → Semana 6</span>
+    </div>
+    <div class="section-body">
+      <div class="cards-row" id="cards-pixels"></div>
+      <div class="chart-wrap"><canvas id="chart-pixels"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ── 7. CHECKOUT ── -->
+  <div class="section" id="checkout" data-tab="lancamento">
+    <div class="section-header">
+      <div class="icon">💳</div>
+      <h2>Checkout</h2>
+      <span class="section-sub">Semana 1 → Semana 6</span>
+    </div>
+    <div class="section-body">
+      <div class="cards-row" id="cards-checkout"></div>
+      <div class="chart-wrap"><canvas id="chart-checkout"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ── 8. CARRINHO ABANDONADO ── -->
+  <div class="section" id="carrinho" data-tab="lancamento">
+    <div class="section-header">
+      <div class="icon">🛒</div>
+      <h2>Carrinho Abandonado</h2>
+      <span class="section-sub">Semana 1 → Semana 6</span>
+    </div>
+    <div class="section-body">
+      <div class="cards-row" id="cards-carrinho"></div>
+      <div class="chart-wrap"><canvas id="chart-carrinho"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ── 9. SUPORTE ── -->
+  <div class="section" id="suporte" data-tab="lancamento">
+    <div class="section-header">
+      <div class="icon">🎧</div>
+      <h2>Suporte</h2>
+      <span class="section-sub">Semana 1 → Semana 6</span>
+    </div>
+    <div class="section-body">
+      <div class="cards-row" id="cards-suporte"></div>
+      <div class="chart-wrap"><canvas id="chart-suporte"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ── 10. SELLERS ── -->
+  <div class="section" id="sellers" data-tab="saude">
+    <div class="section-header">
+      <div class="icon">👤</div>
+      <h2>Sellers</h2>
+      <span class="section-sub">Semana 1 → Semana 6</span>
+    </div>
+    <div class="section-body">
+
+      <h3 style="font-size:0.85rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 10px;">Cadastro &amp; Ativação</h3>
+      <div class="cards-row" id="cards-sellers-cadastro"></div>
+      <div class="chart-wrap"><canvas id="chart-sellers-cadastro"></canvas></div>
+
+      <h3 style="font-size:0.85rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:0.5px;margin:24px 0 10px;">Engajamento &amp; Saúde</h3>
+      <div class="cards-row" id="cards-sellers-engajamento"></div>
+      <div class="chart-wrap"><canvas id="chart-sellers-engajamento"></canvas></div>
+
+      <h3 style="font-size:0.85rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:0.5px;margin:24px 0 10px;">Risco</h3>
+      <div class="cards-row" id="cards-sellers-risco"></div>
+      <div class="chart-wrap"><canvas id="chart-sellers-risco"></canvas></div>
+
+      <h3 style="font-size:0.85rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:0.5px;margin:24px 0 10px;">Crescimento &amp; Retenção</h3>
+      <div class="cards-row" id="cards-sellers-crescimento"></div>
+      <div class="chart-wrap"><canvas id="chart-sellers-crescimento"></canvas></div>
+
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  Bestfy &copy; 2026 — Painel de Métricas de Produto &nbsp;|&nbsp; Dados atualizados automaticamente via Google Sheets
+</footer>
+
+<script>
+// ============================================================
+// CONFIGURAÇÃO DE FONTE DE DADOS
+// ------------------------------------------------------------
+// MODO MOCK (padrão): USE_MOCK_DATA = true
+//   Os dados abaixo (MOCK_DATA) são usados diretamente.
+//
+// MODO GOOGLE SHEETS: defina USE_MOCK_DATA = false e preencha
+//   SHEETS_CSV_URL com a URL de exportação CSV da sua planilha:
+//
+//   1. Abra sua planilha no Google Sheets
+//   2. Arquivo → Compartilhar → Publicar na web
+//   3. Escolha a aba desejada e formato CSV
+//   4. Copie a URL gerada e cole em SHEETS_CSV_URL abaixo
+//
+// Exemplo:
+//   const SHEETS_CSV_URL = "https://docs.google.com/spreadsheets/d/SEU_ID/export?format=csv&gid=0";
+//
+// Estrutura esperada do CSV (1ª linha = cabeçalhos, 1 linha por semana):
+//   semana, ns_pedidos, ns_conversao, ns_carrinhos_abandonados,
+//   cad_produtos, cad_vendedores,
+//   me_lojas, me_pct_frete,
+//   sh_lojas, sh_produtos, sh_erro,
+//   cup_criados, cup_taxa_uso, cup_pct_pedidos,
+//   px_lojas, px_pct_eventos,
+//   ck_inicio, ck_conclusao, ck_abandono_etapa, ck_rejeicao_pgto, ck_ticket_medio, ck_conversao, ck_forma_pgto_top,
+//   car_abandonados, car_pct_sessoes,
+//   sup_duvidas, sup_bugs
+// ============================================================
+
+const USE_MOCK_DATA = false;
+const SHEETS_CSV_LANCAMENTO = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTXGAA4OI5FQzbBtQUc_EKG_CYfsAWsqbqcCWUAKleMpRtXQtUgzhUmFZUcUow02g/pub?gid=132519304&single=true&output=csv";
+const SHEETS_CSV_SAUDE      = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTXGAA4OI5FQzbBtQUc_EKG_CYfsAWsqbqcCWUAKleMpRtXQtUgzhUmFZUcUow02g/pub?gid=852087144&single=true&output=csv";
+
+// ── DADOS MOCK (6 semanas) ─────────────────────────────────
+const WEEKS = ["Sem 1", "Sem 2", "Sem 3", "Sem 4", "Sem 5", "Sem 6"];
+
+const MOCK_DATA = {
+  // Indicadores Principais
+  ns_pedidos:               [312, 345, 389, 401, 438, 472],
+  ns_conversao:             [2.1, 2.3, 2.5, 2.4, 2.7, 2.9],
+  ns_carrinhos_abandonados: [158, 172, 165, 181, 170, 163],
+
+  // Cadastro de Produto
+  cad_produtos:   [1820, 1950, 2110, 2280, 2390, 2540],
+  cad_vendedores: [204,  218,  231,  245,  259,  271],
+
+  // Melhor Envio
+  me_lojas:     [87,  94, 103, 110, 118, 127],
+  me_pct_frete: [41,  44,  47,  49,  52,  55],
+
+  // Shopify
+  sh_lojas:    [32,  35,  38,  41,  44,  48],
+  sh_produtos: [5200, 5640, 6100, 6580, 7020, 7510],
+  sh_erro:     [3.2, 2.9, 2.5, 2.1, 1.8, 1.5],
+
+  // Cupons
+  cup_criados:    [45,  52,  61,  58,  67,  74],
+  cup_taxa_uso:   [18,  21,  24,  22,  26,  29],
+  cup_pct_pedidos:[12,  14,  16,  15,  18,  20],
+
+  // Pixels
+  px_lojas:      [63,  68,  74,  80,  86,  92],
+  px_pct_eventos:[88,  89,  91,  92,  93,  95],
+
+  // Checkout
+  ck_inicio:         [68,  71,  73,  72,  75,  77],
+  ck_conclusao:      [42,  44,  46,  45,  48,  51],
+  ck_abandono_etapa: [26,  27,  27,  27,  27,  26],
+  ck_rejeicao_pgto:  [8.2, 7.8, 7.5, 7.2, 6.9, 6.5],
+  ck_ticket_medio:   [187, 193, 198, 201, 208, 215],
+  ck_conversao:      [2.1, 2.3, 2.5, 2.4, 2.7, 2.9],
+  ck_forma_pgto_top: ["PIX","PIX","PIX","PIX","PIX","PIX"],
+
+  // Carrinho Abandonado
+  car_abandonados:  [158, 172, 165, 181, 170, 163],
+  car_pct_sessoes:  [34,  36,  35,  37,  34,  33],
+
+  // Suporte
+  sup_duvidas: [42,  38,  45,  40,  36,  33],
+  sup_bugs:    [17,  14,  19,  15,  12,  10],
+
+  // Sellers — Cadastro & Ativação
+  sel_total:        [120, 134, 148, 163, 177, 192],
+  sel_novos:        [14,  14,  14,  15,  14,  15],
+  sel_incompletos:  [22,  20,  18,  17,  16,  14],
+  sel_taxa_conclusao: [81.7, 85.1, 87.8, 89.6, 91.0, 92.7],
+
+  // Sellers — Engajamento & Saúde
+  sel_ativos:            [54,  60,  67,  74,  80,  88],
+  sel_churn:             [18,  16,  15,  13,  12,  10],
+  sel_nunca_vendeu:      [28,  26,  24,  22,  20,  18],
+  sel_saude_comprometida:[12,  11,  10,   9,   8,   7],
+
+  // Sellers — Risco
+  sel_chargeback_alto: [8,  7,  6,  6,  5,  4],
+  sel_reembolso_alto:  [5,  5,  4,  4,  3,  3],
+  sel_med_alto:        [3,  3,  2,  2,  2,  1],
+
+  // Sellers — Crescimento & Retenção
+  sel_receita:          [48200, 53800, 61400, 68900, 75300, 83600],
+  sel_ticket_medio:     [892,   897,   916,   931,   941,   950],
+  sel_ltv_medio:        [2840,  3010,  3290,  3520,  3740,  3980],
+  sel_tempo_ativo_semanas: [8.2, 8.6, 9.1, 9.4, 9.8, 10.3],
+};
+
+// ── PALETA DE CORES PARA GRÁFICOS ─────────────────────────
+const PALETTE = [
+  "rgba(31,56,100,0.85)",
+  "rgba(74,144,217,0.85)",
+  "rgba(26,158,92,0.85)",
+  "rgba(217,104,37,0.85)",
+  "rgba(155,89,182,0.85)",
+  "rgba(231,76,60,0.85)",
+  "rgba(52,152,219,0.85)",
+];
+
+// ── UTILITÁRIOS ────────────────────────────────────────────
+
+/** Formata número: inteiros sem decimais, floats com 1 casa */
+function fmt(v) {
+  if (typeof v !== "number") return v;
+  return v % 1 === 0 ? v.toLocaleString("pt-BR") : v.toFixed(1).replace(".", ",");
+}
+
+/** Retorna o delta entre último e penúltimo valor */
+function delta(arr) {
+  const last = arr[arr.length - 1];
+  const prev = arr[arr.length - 2];
+  if (typeof last !== "number" || typeof prev !== "number") return null;
+  const diff = last - prev;
+  const pct  = prev !== 0 ? ((diff / prev) * 100).toFixed(1) : "0.0";
+  return { diff, pct };
+}
+
+/** Cria HTML de card */
+function makeCard(label, series, suffix = "", invertDelta = false) {
+  const val  = series[series.length - 1];
+  const d    = delta(series);
+  let deltaHtml = "";
+  if (d !== null) {
+    const up  = invertDelta ? d.diff < 0 : d.diff > 0;
+    const cls = d.diff === 0 ? "neutral" : (up ? "up" : "down");
+    const arrow = d.diff === 0 ? "→" : (d.diff > 0 ? "↑" : "↓");
+    const sign  = d.diff > 0 ? "+" : "";
+    deltaHtml = `<span class="card-delta ${cls}">${arrow} ${sign}${d.pct}%</span>`;
+  }
+  return `
+    <div class="card">
+      <div class="card-label">${label}</div>
+      <div class="card-value">${fmt(val)}${suffix}</div>
+      ${deltaHtml}
+    </div>`;
+}
+
+/** Renderiza um conjunto de cards em um container */
+function renderCards(containerId, defs) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = defs.map(d => makeCard(d.label, d.series, d.suffix || "", d.invertDelta || false)).join("");
+}
+
+// ── METAS ─────────────────────────────────────────────────
+const METAS_KEY = "bestfy_metas";
+
+function loadMetas() {
+  try { return JSON.parse(localStorage.getItem(METAS_KEY)) || {}; } catch { return {}; }
+}
+
+function saveMetas() {
+  const m = {
+    conversao:  parseFloat(document.getElementById("meta-conversao").value) || null,
+    conclusao:  parseFloat(document.getElementById("meta-conclusao").value) || null,
+    rejeicao:   parseFloat(document.getElementById("meta-rejeicao").value) || null,
+    pedidos:    parseFloat(document.getElementById("meta-pedidos").value) || null,
+    carrinhos:  parseFloat(document.getElementById("meta-carrinhos").value) || null,
+    duvidas:      parseFloat(document.getElementById("meta-duvidas").value) || null,
+    bugs:         parseFloat(document.getElementById("meta-bugs").value) || null,
+    sel_ativos:   parseFloat(document.getElementById("meta-sel-ativos").value) || null,
+    sel_churn:    parseFloat(document.getElementById("meta-sel-churn").value) || null,
+    sel_novos:    parseFloat(document.getElementById("meta-sel-novos").value) || null,
+    sel_receita:  parseFloat(document.getElementById("meta-sel-receita").value) || null,
+  };
+  localStorage.setItem(METAS_KEY, JSON.stringify(m));
+}
+
+function toggleMetas() {
+  const body = document.getElementById("metas-body");
+  const icon = document.getElementById("metas-toggle-icon");
+  const open = body.classList.toggle("open");
+  icon.textContent = open ? "▲" : "▼";
+}
+
+function applyMetasToInputs() {
+  const m = loadMetas();
+  if (m.conversao != null) document.getElementById("meta-conversao").value = m.conversao;
+  if (m.conclusao != null) document.getElementById("meta-conclusao").value = m.conclusao;
+  if (m.rejeicao  != null) document.getElementById("meta-rejeicao").value  = m.rejeicao;
+  if (m.pedidos   != null) document.getElementById("meta-pedidos").value   = m.pedidos;
+  if (m.carrinhos != null) document.getElementById("meta-carrinhos").value = m.carrinhos;
+  if (m.duvidas     != null) document.getElementById("meta-duvidas").value     = m.duvidas;
+  if (m.bugs        != null) document.getElementById("meta-bugs").value        = m.bugs;
+  if (m.sel_ativos  != null) document.getElementById("meta-sel-ativos").value  = m.sel_ativos;
+  if (m.sel_churn   != null) document.getElementById("meta-sel-churn").value   = m.sel_churn;
+  if (m.sel_novos   != null) document.getElementById("meta-sel-novos").value   = m.sel_novos;
+  if (m.sel_receita != null) document.getElementById("meta-sel-receita").value = m.sel_receita;
+}
+
+function metaLine(value, label) {
+  if (value == null) return null;
+  return {
+    type: "line",
+    label: "Meta: " + label,
+    data: Array(50).fill(value),
+    borderColor: "rgba(217,48,37,0.8)",
+    borderWidth: 2,
+    borderDash: [6, 4],
+    pointRadius: 0,
+    fill: false,
+    order: -1,
+  };
+}
+
+/** Cria gráfico de barras */
+function makeChart(canvasId, datasets, metaValue, metaLabel) {
+  const ctx = document.getElementById(canvasId);
+  if (!ctx) return;
+  const allDatasets = datasets.map((ds, i) => ({
+    label: ds.label,
+    data: ds.data,
+    backgroundColor: PALETTE[i % PALETTE.length],
+    borderRadius: 4,
+    borderSkipped: false,
+  }));
+  const line = metaLine(metaValue, metaLabel);
+  if (line) allDatasets.push(line);
+  new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: window.CHART_WEEKS || WEEKS,
+      datasets: allDatasets,
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: "top",
+          labels: { font: { size: 11 }, color: "#1a2a3a", boxWidth: 12, padding: 12 },
+        },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.dataset.label}: ${fmt(ctx.parsed.y)}`,
+          },
+        },
+      },
+      scales: {
+        x: {
+          ticks: { font: { size: 11 }, color: "#6b7a8d" },
+          grid: { display: false },
+        },
+        y: {
+          ticks: { font: { size: 11 }, color: "#6b7a8d" },
+          grid: { color: "rgba(0,0,0,0.05)" },
+          beginAtZero: true,
+        },
+      },
+    },
+  });
+}
+
+// ── PARSER CSV (para quando integrar com Google Sheets) ────
+/**
+ * parseCsv(csvText)
+ * Recebe o texto bruto do CSV exportado pelo Google Sheets
+ * e retorna um array de objetos { coluna: valor }.
+ *
+ * Uso futuro:
+ *   fetch(SHEETS_CSV_URL)
+ *     .then(r => r.text())
+ *     .then(csv => {
+ *       const rows = parseCsv(csv);
+ *       // mapeie rows para as séries de MOCK_DATA e re-renderize
+ *     });
+ */
+function parseCsv(csvText) {
+  const lines = csvText.trim().split("\n").map(l => l.split(",").map(c => c.trim().replace(/^"|"$/g, "")));
+  const headers = lines[0];
+  return lines.slice(1).map(row => {
+    const obj = {};
+    headers.forEach((h, i) => {
+      const v = row[i] === undefined ? "" : String(row[i]).trim();
+      if (v === "") { obj[h] = 0; return; }
+      const n = parseFloat(v.replace(",", "."));
+      obj[h] = isNaN(n) ? v : n;
+    });
+    return obj;
+  });
+}
+
+// ── INICIALIZAÇÃO ──────────────────────────────────────────
+
+function init(data) {
+  // Última atualização
+  document.getElementById("last-update").textContent =
+    new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+
+  const m = loadMetas();
+
+  // 1. Indicadores Principais
+  renderCards("cards-north-star", [
+    { label: "Pedidos via checkout próprio", series: data.ns_pedidos },
+    { label: "Taxa de conversão",            series: data.ns_conversao,             suffix: "%" },
+    { label: "Carrinhos abandonados ident.", series: data.ns_carrinhos_abandonados, invertDelta: true },
+  ]);
+  makeChart("chart-north-star", [
+    { label: "Pedidos",               data: data.ns_pedidos },
+    { label: "Carrinhos abandonados", data: data.ns_carrinhos_abandonados },
+  ], m.pedidos, "Pedidos");
+
+  // 2. Cadastro de Produto
+  renderCards("cards-cadastro", [
+    { label: "Produtos cadastrados", series: data.cad_produtos },
+    { label: "Vendedores ativos",    series: data.cad_vendedores },
+  ]);
+  makeChart("chart-cadastro", [
+    { label: "Produtos cadastrados", data: data.cad_produtos },
+    { label: "Vendedores ativos",    data: data.cad_vendedores },
+  ]);
+
+  // 3. Melhor Envio
+  renderCards("cards-melhor-envio", [
+    { label: "Lojas com Melhor Envio", series: data.me_lojas },
+    { label: "% pedidos com frete ME", series: data.me_pct_frete, suffix: "%" },
+  ]);
+  makeChart("chart-melhor-envio", [
+    { label: "Lojas configuradas", data: data.me_lojas },
+    { label: "% pedidos via ME",   data: data.me_pct_frete },
+  ]);
+
+  // 4. Shopify
+  renderCards("cards-shopify", [
+    { label: "Lojas com sync ativo",  series: data.sh_lojas },
+    { label: "Produtos sincronizados", series: data.sh_produtos },
+    { label: "Taxa de erro de sync",  series: data.sh_erro, suffix: "%", invertDelta: true },
+  ]);
+  makeChart("chart-shopify", [
+    { label: "Lojas com sync",   data: data.sh_lojas },
+    { label: "Taxa de erro (%)", data: data.sh_erro },
+  ]);
+
+  // 5. Cupons
+  renderCards("cards-cupons", [
+    { label: "Cupons criados",         series: data.cup_criados },
+    { label: "Taxa de uso dos cupons", series: data.cup_taxa_uso,    suffix: "%" },
+    { label: "% pedidos com cupom",    series: data.cup_pct_pedidos, suffix: "%" },
+  ]);
+  makeChart("chart-cupons", [
+    { label: "Cupons criados",        data: data.cup_criados },
+    { label: "Taxa de uso (%)",       data: data.cup_taxa_uso },
+    { label: "% pedidos c/ cupom",    data: data.cup_pct_pedidos },
+  ]);
+
+  // 6. Pixels
+  renderCards("cards-pixels", [
+    { label: "Lojas com pixel",      series: data.px_lojas },
+    { label: "% eventos c/ sucesso", series: data.px_pct_eventos, suffix: "%" },
+  ]);
+  makeChart("chart-pixels", [
+    { label: "Lojas com pixel",      data: data.px_lojas },
+    { label: "% eventos disparados", data: data.px_pct_eventos },
+  ]);
+
+  // 7. Checkout
+  renderCards("cards-checkout", [
+    { label: "Taxa de início checkout", series: data.ck_inicio,         suffix: "%" },
+    { label: "Taxa de conclusão",       series: data.ck_conclusao,      suffix: "%" },
+    { label: "Abandono por etapa",      series: data.ck_abandono_etapa, suffix: "%", invertDelta: true },
+    { label: "Rejeição de pagamento",   series: data.ck_rejeicao_pgto,  suffix: "%", invertDelta: true },
+    { label: "Ticket médio",            series: data.ck_ticket_medio },
+    { label: "Taxa de conversão",       series: data.ck_conversao,      suffix: "%" },
+  ]);
+  makeChart("chart-checkout", [
+    { label: "Conclusão (%)",          data: data.ck_conclusao },
+    { label: "Taxa de conversão (%)",  data: data.ck_conversao },
+    { label: "Rejeição pgto (%)",      data: data.ck_rejeicao_pgto },
+  ], m.conclusao, "Conclusão");
+
+  // 8. Carrinho Abandonado
+  renderCards("cards-carrinho", [
+    { label: "Carrinhos abandonados", series: data.car_abandonados, invertDelta: true },
+    { label: "% sessões c/ abandono", series: data.car_pct_sessoes, suffix: "%", invertDelta: true },
+  ]);
+  makeChart("chart-carrinho", [
+    { label: "Carrinhos abandonados", data: data.car_abandonados },
+  ], m.carrinhos, "Carrinhos");
+
+  // 9. Suporte
+  renderCards("cards-suporte", [
+    { label: "Chamados — Dúvidas", series: data.sup_duvidas, invertDelta: true },
+    { label: "Chamados — Bug",     series: data.sup_bugs,    invertDelta: true },
+  ]);
+  makeChart("chart-suporte", [
+    { label: "Dúvidas", data: data.sup_duvidas },
+    { label: "Bugs",    data: data.sup_bugs },
+  ], m.duvidas, "Dúvidas");
+
+  // 10. Sellers — Cadastro & Ativação
+  renderCards("cards-sellers-cadastro", [
+    { label: "Total de sellers na base",       series: data.sel_total },
+    { label: "Novos sellers na semana",        series: data.sel_novos },
+    { label: "Cadastro incompleto (sem docs)", series: data.sel_incompletos, invertDelta: true },
+    { label: "Taxa de conclusão do cadastro",  series: data.sel_taxa_conclusao, suffix: "%" },
+  ]);
+  makeChart("chart-sellers-cadastro", [
+    { label: "Total na base",          data: data.sel_total },
+    { label: "Novos",                  data: data.sel_novos },
+    { label: "Cadastro incompleto",    data: data.sel_incompletos },
+  ], m.sel_novos, "Novos sellers");
+
+  // 10. Sellers — Engajamento & Saúde
+  renderCards("cards-sellers-engajamento", [
+    { label: "Sellers ativos (≥ R$1.000/sem)",      series: data.sel_ativos },
+    { label: "Sellers em churn (+3 dias sem venda)", series: data.sel_churn,             invertDelta: true },
+    { label: "Nunca venderam",                       series: data.sel_nunca_vendeu,       invertDelta: true },
+    { label: "Saúde da conta comprometida",          series: data.sel_saude_comprometida, invertDelta: true },
+  ]);
+  makeChart("chart-sellers-engajamento", [
+    { label: "Ativos",              data: data.sel_ativos },
+    { label: "Churn",               data: data.sel_churn },
+    { label: "Nunca venderam",      data: data.sel_nunca_vendeu },
+    { label: "Saúde comprometida",  data: data.sel_saude_comprometida },
+  ], m.sel_ativos, "Sellers ativos");
+
+  // 10. Sellers — Risco
+  renderCards("cards-sellers-risco", [
+    { label: "Alto chargeback",  series: data.sel_chargeback_alto, invertDelta: true },
+    { label: "Alto reembolso",   series: data.sel_reembolso_alto,  invertDelta: true },
+    { label: "MED elevado",      series: data.sel_med_alto,        invertDelta: true },
+  ]);
+  makeChart("chart-sellers-risco", [
+    { label: "Chargeback alto", data: data.sel_chargeback_alto },
+    { label: "Reembolso alto",  data: data.sel_reembolso_alto },
+    { label: "MED elevado",     data: data.sel_med_alto },
+  ]);
+
+  // 10. Sellers — Crescimento & Retenção
+  renderCards("cards-sellers-crescimento", [
+    { label: "Receita total dos sellers (R$)",    series: data.sel_receita },
+    { label: "Ticket médio por seller (R$)",      series: data.sel_ticket_medio },
+    { label: "LTV médio por seller (R$)",         series: data.sel_ltv_medio },
+    { label: "Tempo médio ativo (semanas)",       series: data.sel_tempo_ativo_semanas },
+  ]);
+  makeChart("chart-sellers-crescimento", [
+    { label: "Receita total (R$)", data: data.sel_receita },
+    { label: "LTV médio (R$)",     data: data.sel_ltv_medio },
+  ], m.sel_receita, "Receita sellers");
+}
+
+// ── CARGA DE DADOS ─────────────────────────────────────────
+applyMetasToInputs();
+
+function csvToData(rows) {
+  const g = k => rows.map(r => {
+    const v = r[k];
+    if (v === undefined || v === null || v === "") return 0;
+    if (typeof v === "number") return v;
+    const normalized = String(v).replace(",", ".");
+    const n = parseFloat(normalized);
+    return isNaN(n) ? v : n;
+  });
+  return g;
+}
+
+if (USE_MOCK_DATA) {
+  init(MOCK_DATA);
+} else {
+  Promise.all([
+    fetch(SHEETS_CSV_LANCAMENTO).then(r => r.ok ? r.text() : Promise.reject(r.status)),
+    fetch(SHEETS_CSV_SAUDE).then(r => r.ok ? r.text() : Promise.reject(r.status)),
+  ])
+  .then(([csvL, csvS]) => {
+    const rowsL = parseCsv(csvL);
+    const rowsS = parseCsv(csvS);
+    if (!rowsL.length && !rowsS.length) { init(MOCK_DATA); return; }
+
+    const gL = csvToData(rowsL.length ? rowsL : [{}]);
+    const gS = csvToData(rowsS.length ? rowsS : [{}]);
+
+    const liveData = {
+      _weeks: rowsL.map(r => r["semana"] || r["Semana"] || ""),
+      // Lançamento
+      ns_pedidos:               gL("pedidos_checkout"),
+      ns_conversao:             gL("taxa_conversao"),
+      ns_carrinhos_abandonados: gL("carrinhos_abandonados"),
+      cad_produtos:             gL("produtos_cadastrados"),
+      cad_vendedores:           gL("vendedores_ativos"),
+      me_lojas:                 gL("lojas_melhor_envio"),
+      me_pct_frete:             gL("pct_frete_melhor_envio"),
+      sh_lojas:                 gL("lojas_shopify_sync"),
+      sh_produtos:              gL("produtos_sincronizados"),
+      sh_erro:                  gL("taxa_erro_sync"),
+      cup_criados:              gL("cupons_criados"),
+      cup_taxa_uso:             gL("taxa_uso_cupons"),
+      cup_pct_pedidos:          gL("pct_pedidos_cupom"),
+      px_lojas:                 gL("lojas_pixel_configurado"),
+      px_pct_eventos:           gL("pct_eventos_pixel"),
+      ck_inicio:                gL("taxa_inicio_checkout"),
+      ck_conclusao:             gL("taxa_conclusao_checkout"),
+      ck_abandono_etapa:        gL("taxa_abandono_etapa"),
+      ck_rejeicao_pgto:         gL("taxa_rejeicao_pagamento"),
+      ck_ticket_medio:          gL("ticket_medio"),
+      ck_conversao:             gL("taxa_conversao"),
+      ck_forma_pgto_top:        gL("forma_pagamento_mais_usada"),
+      car_abandonados:          gL("carrinhos_abandonados_periodo"),
+      car_pct_sessoes:          gL("pct_sessoes_carrinho_abandonado"),
+      sup_duvidas:              gL("chamados_duvidas"),
+      sup_bugs:                 gL("chamados_bug"),
+      // Saúde — Sellers
+      sel_total:               gS("sel_total"),
+      sel_novos:               gS("sel_novos"),
+      sel_incompletos:         gS("sel_incompletos"),
+      sel_taxa_conclusao:      gS("sel_taxa_conclusao"),
+      sel_ativos:              gS("sel_ativos"),
+      sel_churn:               gS("sel_churn"),
+      sel_nunca_vendeu:        gS("sel_nunca_vendeu"),
+      sel_saude_comprometida:  gS("sel_saude_comprometida"),
+      sel_chargeback_alto:     gS("sel_chargeback_alto"),
+      sel_reembolso_alto:      gS("sel_reembolso_alto"),
+      sel_med_alto:            gS("sel_med_alto"),
+      sel_receita:             gS("sel_receita"),
+      sel_ticket_medio:        gS("sel_ticket_medio"),
+      sel_ltv_medio:           gS("sel_ltv_medio"),
+      sel_tempo_ativo_semanas: gS("sel_tempo_ativo_semanas"),
+    };
+    window.CHART_WEEKS = liveData._weeks;
+    init(liveData);
+  })
+  .catch(err => {
+    console.error("Erro ao carregar planilhas:", err);
+    init(MOCK_DATA);
+  });
+}
+
+// ── ABAS ──────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
+  document.querySelectorAll(".section").forEach(s => s.style.display = s.dataset.tab === tab ? "" : "none");
+  document.querySelectorAll("#main-nav a").forEach(a => a.style.display = a.dataset.tab === tab ? "" : "none");
+  document.querySelectorAll("#metas-panel").forEach(p => p.style.display = tab === "lancamento" ? "" : "none");
+}
+switchTab("lancamento");
+
+// ── NAV: HIGHLIGHT DO LINK ATIVO ──────────────────────────
+(function () {
+  const links = document.querySelectorAll("#main-nav a");
+  const sections = Array.from(links).map(a => document.querySelector(a.getAttribute("href")));
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        links.forEach(l => l.classList.remove("active"));
+        const active = document.querySelector(`#main-nav a[href="#${e.target.id}"]`);
+        if (active) active.classList.add("active");
+      }
+    });
+  }, { threshold: 0.35 });
+  sections.forEach(s => s && obs.observe(s));
+})();
+</script>
+
+<script>
+// ── AUTH ──────────────────────────────────────────────────
+(function () {
+  const overlay = document.getElementById("auth-overlay");
+  const btnLogout = document.getElementById("btn-logout");
+  const KEY = "bfm_auth";
+  const H = "QmVzdGZ5QE0zdHIxY0BzIzIwMjY=";
+
+  function showDashboard() {
+    overlay.classList.add("hidden");
+    btnLogout.style.display = "inline-block";
+  }
+
+  if (sessionStorage.getItem(KEY) === "1") showDashboard();
+
+  window.checkAuth = function () {
+    const input = document.getElementById("auth-input");
+    const err = document.getElementById("auth-error");
+    if (btoa(input.value) === H) {
+      sessionStorage.setItem(KEY, "1");
+      err.style.display = "none";
+      showDashboard();
+    } else {
+      err.style.display = "block";
+      input.value = "";
+      input.focus();
+    }
+  };
+
+  window.doLogout = function () {
+    sessionStorage.removeItem(KEY);
+    overlay.classList.remove("hidden");
+    btnLogout.style.display = "none";
+    document.getElementById("auth-input").value = "";
+  };
+})();
+</script>
+</body>
+</html>
